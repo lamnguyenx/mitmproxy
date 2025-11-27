@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>mitmproxy</title>
-    <link rel="icon" href=".{{ static_url('images/favicon.ico') }}" type="image/x-icon"/>
+    <title>Login</title>
+    <!-- <link rel="icon" href=".{{ static_url('images/favicon.ico') }}" type="image/x-icon"/> -->
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <style>
         body {
@@ -23,7 +23,7 @@
     {% else %}
     <h1>403 Authentication Required</h1>
     {% end %}
-    <p>To access mitmproxy, please enter the password or authentication token printed in the console.</p>
+    <p>Enter Password:</p>
     <form method="POST">
         <label>
             <input type="password" name="token" size="32" placeholder="" />
