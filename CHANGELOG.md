@@ -8,7 +8,10 @@
 ## Unreleased: mitmproxy next
 
 
-## 24 August 2025: mitmproxy 12.1.2
+## 09 October 2025: mitmproxy 1.1.1
+
+
+## 24 August 2025: mitmproxy 13.0.0.dev
 
 - Docker images are now build with Debian Trixie.
   ([#7851](https://github.com/mitmproxy/mitmproxy/pull/7851), @mhils)
