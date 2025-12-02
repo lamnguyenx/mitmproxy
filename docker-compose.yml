@@ -1,11 +1,25 @@
 services:
-  mitmweb:
-    image: lamnguyenx/mitmweb:13.0.0.dev0-lamguyenx
+  mm:
+    image: lamnguyenx/mitmweb-dev:2025-02-12
     build:
       context: .
-      network: host
       dockerfile: Dockerfile
-      args:
-        HTTP_PROXY: ${HTTP_PROXY}
-        HTTPS_PROXY: ${HTTPS_PROXY}
-        NO_PROXY: ${NO_PROXY}
+    volumes:
+      - ./mitmproxy:/app/mitmproxy
+      - ./web:/app/web
+      - ./pyproject.toml:/app/pyproject.toml
+      - ./uv.lock:/app/uv.lock
+      - ./exp/mitmweb/conf_dir:/conf_dir
+      - /app/__pycache__
+      - /app/.pytest_cache
+      - /app/web/node_modules
+    ports:
+      - "8010:8010"
+      - "8011:8011"
+    environment:
+      PYTHONPATH: /app
+      UV_PYTHON: /opt/conda/bin/python
+    command:
+      - /bin/bash
+      - -c
+      - "source .venv/bin/activate && cd web && gulp prod && cd .. && mitmweb --web-host 0.0.0.0 --web-port 8011 --listen-port 8010 --set web_password=\"1\" --set confdir=/conf_dir --set block_global=false"

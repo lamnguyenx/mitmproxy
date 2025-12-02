@@ -1,66 +1,26 @@
-FROM python:3.13-trixie AS wheelbuilder
+FROM condaforge/miniforge3:25.9.1-0
 
-    ARG HTTP_PROXY
-    ENV HTTP_PROXY=${HTTP_PROXY}
-    ENV http_proxy=${HTTP_PROXY}
+WORKDIR /
 
-    ARG HTTPS_PROXY
-    ENV HTTPS_PROXY=${HTTPS_PROXY}
-    ENV https_proxy=${HTTPS_PROXY}
+    RUN --mount=type=cache,target=/cache/conda \
+        CONDA_PKGS_DIRS=/cache/conda \
+        conda install -y -c conda-forge \
+            uv nodejs curl
 
-    ARG NO_PROXY
-    ENV NO_PROXY=${NO_PROXY}
+WORKDIR /app
 
-    WORKDIR /
-        # To build the wheel file:
-        # 1 - Edit version in mitmproxy/version.py
-        # 2 - Run: `uv run release/build.py wheel`
-        COPY release/dist/mitmproxy-13.0.0.dev0+lamnguyenx-py3-none-any.whl /wheels/
-        RUN --mount=type=cache,target=/root/.cache/pip \
-            pip install wheel && pip wheel --wheel-dir /wheels /wheels/*.whl
+    COPY pyproject.toml uv.lock ./
 
+    COPY mitmproxy/ ./mitmproxy/
 
-FROM python:3.13-slim-trixie
+    RUN --mount=type=cache,target=/tmp/uv_cache \
+        UV_CACHE_DIR=/tmp/uv_cache \
+        uv sync --frozen && \
+        uv pip install -e .
 
-    ARG HTTP_PROXY
-    ENV HTTP_PROXY=${HTTP_PROXY}
-    ENV http_proxy=${HTTP_PROXY}
+    COPY web/package.json web/package-lock.json ./web/
 
-    ARG HTTPS_PROXY
-    ENV HTTPS_PROXY=${HTTPS_PROXY}
-    ENV https_proxy=${HTTPS_PROXY}
+    RUN cd web && \
+        npm install
 
-    ARG NO_PROXY
-    ENV NO_PROXY=${NO_PROXY}
-
-    WORKDIR /
-        RUN useradd -mU mitmproxy
-
-        RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
-            --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
-            apt-get update \
-            && apt-get install -y --no-install-recommends gosu nano
-
-        RUN mkdir /home/mitmproxy/.mitmproxy \
-            && chown mitmproxy:mitmproxy /home/mitmproxy/.mitmproxy
-
-        COPY --from=wheelbuilder /wheels /wheels
-        RUN --mount=type=cache,target=/root/.cache/pip \
-            pip install --no-index --find-links=/wheels mitmproxy
-        RUN rm -rf /wheels
-
-        VOLUME /home/mitmproxy/.mitmproxy
-
-        COPY release/docker/docker-entrypoint.sh /usr/local/bin/
-
-ENTRYPOINT ["docker-entrypoint.sh"]
-
-EXPOSE 8080 8081
-
-ENV HTTP_PROXY=
-ENV http_proxy=
-ENV HTTPS_PROXY=
-ENV https_proxy=
-ENV NO_PROXY=
-
-CMD ["mitmproxy"]
+CMD ["/bin/bash"]
